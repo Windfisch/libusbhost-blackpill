@@ -726,6 +726,7 @@ static void poll_init(usbh_lld_stm32f4_driver_data_t *dev)
 
 	case 1:// wait 1ms and issue core soft reset
 
+		LOG_PRINTF("\t\t hass %d %d\n", dev->time_curr_us, dev->timestamp_us);
 		// needs delay to not hang?? Do not know why.
 		// Maybe after AHBIDL is set, it needs to set up some things
 		if (dev->time_curr_us - dev->timestamp_us > 1000) {
