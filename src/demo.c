@@ -51,7 +51,7 @@ static inline void delay_ms_busy_loop(uint32_t ms)
 /* Set STM32 to 168 MHz. */
 static void clock_setup(void)
 {
-	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+	rcc_clock_setup_hse_3v3(&rcc_hse_25mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
 
 	// GPIO
 	rcc_periph_clock_enable(RCC_GPIOA); // OTG_FS + button
@@ -60,10 +60,10 @@ static void clock_setup(void)
 	rcc_periph_clock_enable(RCC_GPIOD); // LEDS
 
 	// periphery
-	rcc_periph_clock_enable(RCC_USART6); // USART
+	rcc_periph_clock_enable(RCC_USART1); // USART
 	rcc_periph_clock_enable(RCC_OTGFS); // OTG_FS
 	rcc_periph_clock_enable(RCC_OTGHS); // OTG_HS
-	rcc_periph_clock_enable(RCC_TIM6); // TIM6
+	rcc_periph_clock_enable(RCC_TIM9); // TIM9
 }
 
 
@@ -72,14 +72,15 @@ static void clock_setup(void)
  */
 static void tim6_setup(void)
 {
-	timer_set_prescaler(TIM6, 8400 - 1);	// 84Mhz/10kHz - 1
-	timer_set_period(TIM6, 65535);			// Overflow in ~6.5 seconds
-	timer_enable_counter(TIM6);
+//	timer_reset(TIM9); // FIXME
+	timer_set_prescaler(TIM9, 8400 - 1);	// 84Mhz/10kHz - 1
+	timer_set_period(TIM9, 65535);			// Overflow in ~6.5 seconds
+	timer_enable_counter(TIM9);
 }
 
 static uint32_t tim6_get_time_us(void)
 {
-	uint32_t cnt = timer_get_counter(TIM6);
+	uint32_t cnt = timer_get_counter(TIM9);
 
 	// convert to 1MHz less precise timer value -> units: microseconds
 	uint32_t time_us = cnt * 100;
@@ -89,6 +90,9 @@ static uint32_t tim6_get_time_us(void)
 
 static void gpio_setup(void)
 {
+	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
+	gpio_set(GPIOC, GPIO13);
+
 	/* Set GPIO12-15 (in GPIO port D) to 'output push-pull'. */
 	gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT,
 			GPIO_PUPD_NONE, GPIO12 | GPIO13 | GPIO14 | GPIO15);
@@ -106,11 +110,12 @@ static void gpio_setup(void)
 	gpio_set_af(GPIOB, GPIO_AF12, GPIO14 | GPIO15);
 
 	// USART TX
-	gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6 | GPIO7);
-	gpio_set_af(GPIOC, GPIO_AF8, GPIO6 | GPIO7);
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO10);
+	gpio_set_af(GPIOA, GPIO_AF7, GPIO9 | GPIO10);
 
 	// button
 	gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO0);
+
 }
 
 static const usbh_dev_driver_t *device_drivers[] = {
@@ -167,6 +172,12 @@ static void hid_in_message_handler(uint8_t device_id, const uint8_t *data, uint3
 		return;
 	}
 
+		/*while(true) { // FIXME BLINKY
+			gpio_clear(GPIOC, GPIO13);
+			delay_ms_busy_loop(100);
+			gpio_set(GPIOC, GPIO13);
+			delay_ms_busy_loop(100);
+		}*/
 	// print only first 4 bytes, since every mouse should have at least these four set.
 	// Report descriptors are not read by driver for now, so we do not know what each byte means
 	LOG_PRINTF("HID EVENT %02X %02X %02X %02X \n", data[0], data[1], data[2], data[3]);
@@ -208,14 +219,13 @@ int main(void)
 {
 	clock_setup();
 	gpio_setup();
+#ifdef USART_DEBUG
+	usart_init(USART1, 115200);
+#endif
+	LOG_PRINTF("\n\n\n\n\n###################\nInit\n");
 
 	// provides time_curr_us to usbh_poll function
 	tim6_setup();
-
-#ifdef USART_DEBUG
-	usart_init(USART6, 115200);
-#endif
-	LOG_PRINTF("\n\n\n\n\n###################\nInit\n");
 
 	/**
 	 * device driver initialization
@@ -242,16 +252,18 @@ int main(void)
 
 	LOG_FLUSH();
 
+	
+
 	while (1) {
 		// set busy led
-		gpio_set(GPIOD,  GPIO14);
+		gpio_set(GPIOC,  GPIO13);
 
 		uint32_t time_curr_us = tim6_get_time_us();
 
 		usbh_poll(time_curr_us);
 
 		// clear busy led
-		gpio_clear(GPIOD,  GPIO14);
+		gpio_clear(GPIOC,  GPIO13);
 
 		LOG_FLUSH();
 
