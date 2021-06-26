@@ -33,8 +33,8 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/otg_hs.h>
-#include <libopencm3/stm32/otg_fs.h>
+#include <libopencm3/usb/dwc/otg_hs.h>
+#include <libopencm3/usb/dwc/otg_fs.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -51,7 +51,7 @@ static inline void delay_ms_busy_loop(uint32_t ms)
 /* Set STM32 to 168 MHz. */
 static void clock_setup(void)
 {
-	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
 
 	// GPIO
 	rcc_periph_clock_enable(RCC_GPIOA); // OTG_FS + button
@@ -72,7 +72,6 @@ static void clock_setup(void)
  */
 static void tim6_setup(void)
 {
-	timer_reset(TIM6);
 	timer_set_prescaler(TIM6, 8400 - 1);	// 84Mhz/10kHz - 1
 	timer_set_period(TIM6, 65535);			// Overflow in ~6.5 seconds
 	timer_enable_counter(TIM6);
@@ -214,7 +213,7 @@ int main(void)
 	tim6_setup();
 
 #ifdef USART_DEBUG
-	usart_init(USART6, 921600);
+	usart_init(USART6, 115200);
 #endif
 	LOG_PRINTF("\n\n\n\n\n###################\nInit\n");
 
