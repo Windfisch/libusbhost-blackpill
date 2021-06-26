@@ -1,7 +1,9 @@
-[![Build Status](https://travis-ci.org/libusbhost/libusbhost.svg?branch=master)](https://travis-ci.org/libusbhost/libusbhost)
 ##General Information
 
 [Link to the official repository](http://github.com/libusbhost/libusbhost)
+
+Updated to latest libopencm3 and adapted for the STM32F411 WeAct black pill
+board by [Florian Jung](https://github.com/Windfisch)
 
 ###Objectives
 
@@ -15,7 +17,7 @@ This means no allocation and reallocation is affecting performance
 
 ### Supported hardware
 
-- stm32f4discovery
+- WeAct black pill
 
 ### Supported device drivers
 
@@ -31,7 +33,7 @@ Make sure the following prerequisities are installed to be able to compile this 
 - **gcc-arm-none-eabi** toolchain for cross compilation
 - **cmake**
 - **ccmake** (optional)
-- **openocd** (optional)
+- **dfu-util** (optional)
 
 ### Basic setup
 1. go to build directory located in the root of the project
@@ -74,23 +76,25 @@ You can alter these by issuing the following commands in the build directory
 > cmake .. -D{VARIABLE}={VALUE}
 
 ### Flashing
-If the *openocd* is installed, `make flash` executed in the build directory
-flashes the `build/demo.hex` to the stm32f4discovery board.
+If the *dfu-util* is installed, `./flash.sh` executed in the repo root
+flashes the program to the black pill board connected via USB. The black
+pill must be put into bootloader mode by pressing the NRST button while
+holding the BOOT0 button.
 
 ### Reading debug output
 The following table represents the configuration of the debug output
 <table>
 <tr>
-	<th>GPIO</th><td>GPIOC6</td>
+	<th>GPIO</th><td>GPIOA9</td>
 </tr>
 <tr>
-	<th>USART periphery</th><td>USART6</td>
+	<th>USART periphery</th><td>USART1</td>
 </tr>
 <tr>
 	<th>Function</th><td>UART TX</td>
 </tr>
 <tr>
-	<th>Baud rate</th><td>921600</td>
+	<th>Baud rate</th><td>115200</td>
 </tr>
 <tr>
 	<th>Uart mode</th><td>8N1</td>
